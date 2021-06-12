@@ -86,6 +86,19 @@ def main(event, context=None):  # pylint: disable=unused-argument
         )
 
         reports.extend(projection.get('reports', []))
+    
+    # Ensure 'residences' is a set of unique addresses
+    for report in reports:
+        if report['title'] == 'Residences Report':
+            report['residences'] = [
+                dict(d) for d in list(
+                    set(
+                        [
+                            frozenset(d.items()) for d in report['residences']
+                        ]
+                    )
+                )
+            ]
 
     # Reformat report output and return
     return {'reports': reports}
