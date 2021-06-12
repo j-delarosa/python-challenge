@@ -72,6 +72,22 @@ def main(event, context=None):  # pylint: disable=unused-argument
 
     logger.info('Service recieved loans: %s', json.dumps(loans, indent=2))
 
+    # Ensure only unique 'maillingAddress' on each loan application
+    for loan in loans:
+        for app in loan['applications']:
+            try:
+                if app['borrower']['mailingAddress'] == \
+                    app['coborrower']['mailingAddress']:
+                    del app['coborrower']['mailingAddress']
+            except KeyError:
+                logger.error(
+                    'Unable to find key for loan application - Skipping loan'
+                )
+                continue
+
+    logger.info('Unique mailing address for each loan applications: %s', 
+        json.dumps(loans, indent=2))
+
     # Generate Manifests
     reports = []
     for loan in loans:
@@ -87,18 +103,5 @@ def main(event, context=None):  # pylint: disable=unused-argument
 
         reports.extend(projection.get('reports', []))
     
-    # Ensure 'residences' is a set of unique addresses
-    for report in reports:
-        if report['title'] == 'Residences Report':
-            report['residences'] = [
-                dict(d) for d in list(
-                    set(
-                        [
-                            frozenset(d.items()) for d in report['residences']
-                        ]
-                    )
-                )
-            ]
-
     # Reformat report output and return
     return {'reports': reports}
