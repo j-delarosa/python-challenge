@@ -59,20 +59,46 @@ class JSONManifest:
         """Return a dictionary of the mapped data, per the given rules."""
         return dict(iter(self))
 
+    @property
+    def uniques(self) -> list:
+        return copy(self._uniques)
+
     def __init__(self, data: dict = None, rules: list = None):
         data = {} if data is None else data
         rules = [] if rules is None else rules
         self._data, self._rules = data, rules
+        self._uniques = self.find_rules(rules)
 
         # Flatten source data for faster parsing
         self._fdata = dict(self.flatten(self._data))
 
     def __iter__(self):
         """Iterate on the rules and items, yielding only those which match."""
+
+        # Handle basic source-target mapping
         for rule in self._rules:
             for path, value in self._fdata.items():
-                if rule.get('source') == path:
-                    yield rule.get('target'), value
+                if 'source' in rule:
+                    if rule.get('source') == path:
+                        yield rule.get('target'), value
+
+            # Handle check_match boolean mapping
+            match_dict = {}
+            for path, value in self._fdata.items():
+                # Build out list of path/value pairs for the given check_match rule
+                if 'check_match' in rule:
+                    candidates = rule.get('check_match')
+                    if rule.get('target') not in match_dict.keys():
+                        match_dict[rule.get('target')] = [[]] * len(candidates)
+                    for idx, candidate_path in enumerate(candidates):
+                        if candidate_path in path:
+                            match_dict[rule.get('target')][idx].append((path, value))
+            # Check for matches in the list and set the target value to True or False.
+            for key, values in match_dict.items():
+                # For empty lists, skip this mapping rule
+                if values:
+                    yield key, len([list(x) for x in set(tuple(x) for x in values)]) == len(values)/2
+
 
     # Static methods
     @staticmethod
@@ -109,6 +135,10 @@ class JSONManifest:
                 yield '.'.join(keys), cdata
 
         yield from iter_child(data, ['$'])
+
+    @staticmethod
+    def find_rules(rules: dict):
+        return [r.get('filter_unique') for r in rules if 'filter_unique' in r]
 
 
 # Factory objects
@@ -298,6 +328,7 @@ class JSONFactory:
                     if all(ele.get(k) == v for k, v in conditions):
                         indices.append(i)
 
+                # Case A - Query w/ Index
                 if index is not None:
                     rlen = len(indices)
                     if rlen <= index:
@@ -311,6 +342,7 @@ class JSONFactory:
                         _iter(keys, ref) if keys else value
                     )
                 else:
+                    # Case B: Query w/out index
                     if not indices:
                         reference[key].append(dict(conditions))
                         indices.append(-1)
@@ -322,6 +354,7 @@ class JSONFactory:
                         )
 
             elif index is not None:
+                # Case C: Index Only
                 if not key in reference:
                     reference[key] = []
 
@@ -336,6 +369,7 @@ class JSONFactory:
                 reference[key][index] = _iter(keys, ref) if keys else value
 
             else:
+                # Case D: Key Only
                 ref = reference.get(key, {})
                 reference[key] = _iter(keys, ref) if keys else value
 
@@ -344,6 +378,104 @@ class JSONFactory:
         path_keys = cls.parse_path(path)
         record = _iter(path_keys, record)
 
+        return record
+
+    @classmethod
+    def remove_duplicates(cls, path, record):
+
+        def _iter(keys=None, reference=None):
+            keys = [] if keys is None else keys
+            reference = {} if reference is None else reference
+            key, index, query = keys.pop(0).values()
+
+            # convert index to integer, if exists
+            if index is not None:
+                index = int(index)
+
+            # 4 possible cases:
+            #    (a) query w/ index :     process query and update only that index from result
+            #    (b) query w/o index: :   process query and update all values
+            #    (c) just index :         grab just that index
+            #    (d) only a key given :   treat like a dict key and update that value
+
+            if query is not None:
+                conditions = [
+                    tuple(
+                        t.strip()
+                            .replace('@.', '')
+                            .replace('\'', '')
+                            .replace('"', '')
+                            .strip()
+                        for t in s.strip().split('==')
+                    )
+                    for s in query[2:-1].split('&&')
+                ]
+
+                if not key in reference:
+                    reference[key] = []
+
+                indices = []
+                for i, ele in enumerate(reference[key]):
+                    if all(ele.get(k) == v for k, v in conditions):
+                        indices.append(i)
+
+                # Case A - Query w/ Index
+                if index is not None:
+                    rlen = len(indices)
+                    if rlen <= index:
+                        for _ in range(index + 1 - rlen):
+                            reference[key].append(dict(conditions))
+                        indices.append(-1)
+                        index = -1
+
+                    ref = reference[key][indices[index]]
+                    if keys:
+                        _iter(list(keys), ref)
+                    else:
+                        reference[key][indices[index]] = [dict(t) for t in {tuple(d.items()) for d in reference[key][indices[index]]}]
+                else:
+                    # Case B: Query w/out index
+                    if not indices:
+                        reference[key].append(dict(conditions))
+                        indices.append(-1)
+
+                    for idx in indices:
+                        ref = reference[key][idx]
+                        if keys:
+                            _iter(list(keys), ref)
+                        else:
+                            reference[key][index] = [dict(t) for t in {tuple(d.items()) for d in reference[key][index]}]
+            elif index is not None:
+                # Case C: Index Only
+                if not key in reference:
+                    reference[key] = []
+
+                rlen = len(reference[key])
+                if rlen <= index:
+                    for _ in range(index + 1 - rlen):
+                        reference[key].append(
+                            {}
+                        )  # Change to type of child element
+
+                ref = reference[key][index]
+                if keys:
+                    _iter(keys, ref)
+                else:
+                    reference[key][index] = [dict(t) for t in {tuple(d.items()) for d in reference[key][index]}]
+
+            else:
+                # Case D: Key Only
+                ref = reference.get(key, {})
+                if keys:
+                    _iter(keys, ref)
+                else:
+                    reference[key] = [dict(t) for t in {tuple(d.items()) for d in reference[key]}]
+
+            return reference
+
+        path_keys = cls.parse_path(path)
+
+        record = _iter(path_keys, record)
         return record
 
     # Instance attributes
@@ -372,5 +504,10 @@ class JSONFactory:
 
         for path, value in queries:
             self.insert_query(path, value, record)
+
+        # Remove Duplicates
+        uniques = self._manifest.uniques
+        for path in uniques:
+            record = self.remove_duplicates(path, record)
 
         return record

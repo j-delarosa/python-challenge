@@ -31,5 +31,8 @@
     {
         "source": "$.applications[0].coborrower.mailingAddress.addressPostalCode",
         "target": "$.reports[?(@.title == 'Residences Report')].residences[1].zip"
+    },
+    {
+        "filter_unique": "$.reports[?(@.title == 'Residences Report')].residences"
     }
 ]
