@@ -81,52 +81,29 @@ class JSONManifest:
 
     def __iter__(self):
         """Iterate on the rules and items, yielding only those which match."""
-        lengths = {}
-
-        def _find_source_in_path(source, path):
-            if source == path:
-                return True
-
-            source_wildcard_regex = r"\.(.*)\[\*\]"
-            found_wildcard = re.findall(source_wildcard_regex, source)
-            for wildcard in found_wildcard:
-                index_regex = fr"\.{wildcard}\[\d+]"
-                found_item = re.search(index_regex, path)
-                if found_item:
-                    return True
-
-            return False
-
-        def _build_target_path(target, items):
-            test = items
-
-            target_n_regex = r"\..*\[(n(?:\+\d+)*)\]"
-            found_ = re.findall(target_n_regex, target)
-
-            return target
 
         target_track = {}
         for rule in self._rules:
             # Handle basic source-target mapping
-            for path, value in self._fdata.items():
-                if 'source' in rule:
+            if 'source' in rule:
+                for path, value in self._fdata.items():
                     if rule.get('source') == path:
                         yield rule.get('target'), value
 
             # Handle check_match boolean mapping
-            check_match_values= []
-            for path, value in self._fdata.items():
-                # Build out list of path/value pairs for the given check_match rule
-                if 'check_match' in rule:
+            if 'check_match' in rule:
+                check_match_values= []
+                for path, value in self._fdata.items():
+                    # Build out list of path/value pairs for the given check_match rule
                     for candidate_path in rule.get('check_match'):
                         if candidate_path in path:
                             check_match_values.append((path.replace(candidate_path, ''), value))
 
-            # For empty lists, skip this mapping rule
-            if check_match_values:
-                yield rule.get('target'), \
-                      len([t for t in (set(tuple(i) for i in check_match_values))]) == \
-                      len(check_match_values)/2
+                # For empty lists, skip this mapping rule
+                if check_match_values:
+                    yield rule.get('target'), \
+                          len([t for t in (set(tuple(i) for i in check_match_values))]) == \
+                          len(check_match_values)/2
 
             # Handle "iterate" rules to take care of lists of unknown sizes
             # Keeps Track of 2 Lists:
@@ -140,7 +117,7 @@ class JSONManifest:
                         if mapping.get('source') in path and \
                                 iterate_rule.get('source_list') in path:
                             target_list = f"{iterate_rule.get('target_list')}"
-                            count_for_target = target_track.get(target_list, 0)
+                            target_track[target_list] = target_track.get(target_list, 0)
 
                             # Using regex, check the source list if we have looked at this index yet
                             modified_sl = str(iterate_rule.get('source_list')).\
@@ -150,18 +127,16 @@ class JSONManifest:
                             if len(match) > 0:
                                 if match[0] not in source_track:
                                     if len(source_track) != 0:
-                                        count_for_target += 1
-                                        target_track[target_list] = count_for_target
+                                        target_track[target_list] += 1
                                     source_track.append(match[0])
 
                             # Build the target path and return it with the value
                             target_path = \
-                                f"{target_list}[{count_for_target}]{mapping.get('target')}"
+                                f"{target_list}[{target_track[target_list]}]{mapping.get('target')}"
                             yield target_path, value
 
                 # Increase the count for the given target list
-                target_track[target_list] = count_for_target + 1
-
+                target_track[target_list] += 1
 
     # Static methods
     @staticmethod
