@@ -3,12 +3,15 @@ import re
 import logging
 from copy import copy
 from typing import Generator, List, Any
-
+from collections import OrderedDict
+from enum import Enum
 
 # Logging setup
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+class FilterType(Enum):
+    UNIQUE = 'UNIQUE'
 
 # Model objects
 class JSONManifest:
@@ -60,14 +63,14 @@ class JSONManifest:
         return dict(iter(self))
 
     @property
-    def uniques(self) -> list:
-        return copy(self._uniques)
+    def filters(self) -> list:
+        return copy(self._filters)
 
     def __init__(self, data: dict = None, rules: list = None):
         data = {} if data is None else data
         rules = [] if rules is None else rules
         self._data, self._rules = data, rules
-        self._uniques = self.find_rules(rules)
+        self._filters = self.find_filters(rules)
 
         # Flatten source data for faster parsing
         self._fdata = dict(self.flatten(self._data))
@@ -83,22 +86,18 @@ class JSONManifest:
                         yield rule.get('target'), value
 
             # Handle check_match boolean mapping
-            match_dict = {}
+            check_match_values= []
             for path, value in self._fdata.items():
                 # Build out list of path/value pairs for the given check_match rule
                 if 'check_match' in rule:
-                    candidates = rule.get('check_match')
-                    if rule.get('target') not in match_dict.keys():
-                        match_dict[rule.get('target')] = [[]] * len(candidates)
-                    for idx, candidate_path in enumerate(candidates):
+                    for candidate_path in rule.get('check_match'):
                         if candidate_path in path:
-                            match_dict[rule.get('target')][idx].append((path, value))
-            # Check for matches in the list and set the target value to True or False.
-            for key, values in match_dict.items():
-                # For empty lists, skip this mapping rule
-                if values:
-                    yield key, len([list(x) for x in set(tuple(x) for x in values)]) == len(values)/2
+                            check_match_values.append((path.replace(candidate_path, ''), value))
 
+            # For empty lists, skip this mapping rule
+            if check_match_values:
+                yield rule.get('target'), \
+                      len([t for t in (set(tuple(i) for i in check_match_values))]) == len(check_match_values)/2
 
     # Static methods
     @staticmethod
@@ -137,8 +136,14 @@ class JSONManifest:
         yield from iter_child(data, ['$'])
 
     @staticmethod
-    def find_rules(rules: dict):
-        return [r.get('filter_unique') for r in rules if 'filter_unique' in r]
+    def find_filters(rules: dict):
+        rules = {} if rules is None else rules
+        filters = {}
+
+        filter_unique = 'filter_unique'
+        filters[FilterType.UNIQUE] = [r.get(filter_unique) for r in rules if filter_unique in r]
+
+        return filters
 
 
 # Factory objects
@@ -383,6 +388,16 @@ class JSONFactory:
     @classmethod
     def remove_duplicates(cls, path, record):
 
+        def _dedup_list(input):
+            input = [] if None else input
+
+            # For list of dictionaries
+            if all(isinstance(d, dict) for d in input):
+                return [dict(t) for t in {tuple(d.items()) for d in input}]
+            # For list of value types
+            else:
+                return list(OrderedDict.fromkeys(input))
+
         def _iter(keys=None, reference=None):
             keys = [] if keys is None else keys
             reference = {} if reference is None else reference
@@ -432,7 +447,7 @@ class JSONFactory:
                     if keys:
                         _iter(list(keys), ref)
                     else:
-                        reference[key][indices[index]] = [dict(t) for t in {tuple(d.items()) for d in reference[key][indices[index]]}]
+                        reference[key][indices[index]] = _dedup_list(reference[key][indices[index]])
                 else:
                     # Case B: Query w/out index
                     if not indices:
@@ -444,7 +459,7 @@ class JSONFactory:
                         if keys:
                             _iter(list(keys), ref)
                         else:
-                            reference[key][index] = [dict(t) for t in {tuple(d.items()) for d in reference[key][index]}]
+                            reference[key][index] = _dedup_list(reference[key][index])
             elif index is not None:
                 # Case C: Index Only
                 if not key in reference:
@@ -461,7 +476,7 @@ class JSONFactory:
                 if keys:
                     _iter(keys, ref)
                 else:
-                    reference[key][index] = [dict(t) for t in {tuple(d.items()) for d in reference[key][index]}]
+                    reference[key][index] = _dedup_list(reference[key][index])
 
             else:
                 # Case D: Key Only
@@ -469,13 +484,23 @@ class JSONFactory:
                 if keys:
                     _iter(keys, ref)
                 else:
-                    reference[key] = [dict(t) for t in {tuple(d.items()) for d in reference[key]}]
-
+                    reference[key] = _dedup_list(reference[key])
             return reference
 
         path_keys = cls.parse_path(path)
 
         record = _iter(path_keys, record)
+        return record
+
+    @classmethod
+    def filter_record(cls, filters, record):
+        filters = {} if filters is None else filters
+
+        for filter_type, paths in filters.items():
+            if filter_type == FilterType.UNIQUE:
+                for path in paths:
+                    record = cls.remove_duplicates(path, record)
+
         return record
 
     # Instance attributes
@@ -505,9 +530,7 @@ class JSONFactory:
         for path, value in queries:
             self.insert_query(path, value, record)
 
-        # Remove Duplicates
-        uniques = self._manifest.uniques
-        for path in uniques:
-            record = self.remove_duplicates(path, record)
+        # Handle Filters
+        record = self.filter_record(self._manifest.filters, record)
 
         return record
