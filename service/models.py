@@ -84,25 +84,25 @@ class JSONManifest:
 
         # Handle basic source-target mapping
         for rule in self._rules:
-            for path, value in self._fdata.items():
-                if 'source' in rule:
+            if 'source' in rule:
+                for path, value in self._fdata.items():
                     if rule.get('source') == path:
                         yield rule.get('target'), value
 
             # Handle check_match boolean mapping
-            check_match_values= []
-            for path, value in self._fdata.items():
-                # Build out list of path/value pairs for the given check_match rule
-                if 'check_match' in rule:
-                    for candidate_path in rule.get('check_match'):
-                        if candidate_path in path:
-                            check_match_values.append((path.replace(candidate_path, ''), value))
+            if 'check_match' in rule:
+                check_match_values= []
+                for path, value in self._fdata.items():
+                    # Build out list of path/value pairs for the given check_match rule
+                        for candidate_path in rule.get('check_match'):
+                            if candidate_path in path:
+                                check_match_values.append((path.replace(candidate_path, ''), value))
 
-            # For empty lists, skip this mapping rule
-            if check_match_values:
-                yield rule.get('target'), \
-                      len([t for t in set(tuple(i) for i in check_match_values)]) == \
-                      len(check_match_values)/2
+                # For empty lists, skip this mapping rule
+                if check_match_values:
+                    yield rule.get('target'), \
+                          len([t for t in set(tuple(i) for i in check_match_values)]) == \
+                          len(check_match_values)/2
 
     # Static methods
     @staticmethod
