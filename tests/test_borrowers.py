@@ -2,20 +2,20 @@ import os
 import sys
 import json
 import pytest
-from handler import main
-from tests.framework import generate_event
-
 
 # Update Path
 sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 )
 
+from handler import main
+from tests.framework import generate_event
 
-@pytest.mark.parametrize('file_name', ['test_input/loandata_differentstreet.json',
-                                       'test_input/loandata_differentcity.json',
-                                       'test_input/loandata_differentstate.json',
-                                       'test_input/loandata_differentpostalcode.json'])
+
+@pytest.mark.parametrize('file_name', ['tests/test_input/loandata_differentstreet.json',
+                                       'tests/test_input/loandata_differentcity.json',
+                                       'tests/test_input/loandata_differentstate.json',
+                                       'tests/test_input/loandata_differentpostalcode.json'])
 def test_borrowers_report_different_addresses_shared_address_false(file_name):
     with open(file_name) as file:
         event = generate_event(json.load(file))
@@ -29,7 +29,7 @@ def test_borrowers_report_different_addresses_shared_address_false(file_name):
 
 
 def test_borrowers_report_same_address_shared_address_true():
-    with open('test_input/loandata_sameaddress.json') as file:
+    with open('tests/test_input/loandata_sameaddress.json') as file:
         event = generate_event(json.load(file))
     response = main(event)
 

@@ -1,17 +1,20 @@
 import os
 import sys
 import json
-from handler import main
-from tests.framework import generate_event
 
 # Update Path
 sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 )
 
+from handler import main
+from tests.framework import generate_event
+
+
+
 
 def test_residences_report_different_street_addresses_not_filtered():
-    with open('test_input/loandata_differentstreet.json') as file:
+    with open('tests/test_input/loandata_differentstreet.json') as file:
         event = generate_event(json.load(file))
     response = main(event)
 
@@ -26,7 +29,7 @@ def test_residences_report_different_street_addresses_not_filtered():
 
 
 def test_residences_report_different_city_not_filtered():
-    with open('test_input/loandata_differentcity.json') as file:
+    with open('tests/test_input/loandata_differentcity.json') as file:
         event = generate_event(json.load(file))
     response = main(event)
 
@@ -41,7 +44,7 @@ def test_residences_report_different_city_not_filtered():
 
 
 def test_residences_report_different_statenot_filtered():
-    with open('test_input/loandata_differentstate.json') as file:
+    with open('tests/test_input/loandata_differentstate.json') as file:
         event = generate_event(json.load(file))
     response = main(event)
 
@@ -56,7 +59,7 @@ def test_residences_report_different_statenot_filtered():
 
 
 def test_residences_report_different_postal_code_not_filtered():
-    with open('test_input/loandata_differentpostalcode.json') as file:
+    with open('tests/test_input/loandata_differentpostalcode.json') as file:
         event = generate_event(json.load(file))
     response = main(event)
 
@@ -71,7 +74,7 @@ def test_residences_report_different_postal_code_not_filtered():
 
 
 def test_residences_report_same_address_filtered():
-    with open('test_input/loandata_sameaddress.json') as file:
+    with open('tests/test_input/loandata_sameaddress.json') as file:
         event = generate_event(json.load(file))
     response = main(event)
 
