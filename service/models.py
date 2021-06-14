@@ -277,10 +277,12 @@ class JSONFactory:
     @classmethod
     def insert_query(cls, path, value, record=None):
         """Insert a value at a specfied path into the given record.
+
         This method is very similar to insert_value except it assumes the
         path includes a query. This method will then perform very similarly
         to insert_value, except it will ensure that the query is met when
         the value is inserted.
+
         Parameters
         ----------
         path : str
@@ -289,10 +291,12 @@ class JSONFactory:
             The value to insert.
         record : dict{str:any}
             The record to insert the value into.
+
         Returns
         -------
         dict{str:any}
             Returns the updated record.
+
         """
         record = {} if record is None else record
 
@@ -315,10 +319,10 @@ class JSONFactory:
                 conditions = [
                     tuple(
                         t.strip()
-                            .replace('@.', '')
-                            .replace('\'', '')
-                            .replace('"', '')
-                            .strip()
+                        .replace('@.', '')
+                        .replace('\'', '')
+                        .replace('"', '')
+                        .strip()
                         for t in s.strip().split('==')
                     )
                     for s in query[2:-1].split('&&')

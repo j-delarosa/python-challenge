@@ -1,12 +1,5 @@
 [
     {
-        "check_match": [
-            "$.applications[0].borrower.mailingAddress",
-            "$.applications[0].coborrower.mailingAddress"
-        ],
-        "target": "$.reports[?(@.title == 'Borrowers Report')].shared_address"
-    },
-    {
         "iterate": {
             "source_list": "$.applications",
             "target_list": "$.reports[?(@.title == 'Borrowers Report')].borrowers",

@@ -1,8 +1,5 @@
 [
     {
-        "filter_unique": "$.reports[?(@.title == 'Residences Report')].residences"
-    },
-    {
         "iterate": {
             "source_list": "$.applications",
             "target_list": "$.reports[?(@.title == 'Residences Report')].residences",
