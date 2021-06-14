@@ -1,38 +1,53 @@
 [
     {
-        "source": "$.applications[0].borrower.mailingAddress.addressStreetLine1",
-        "target": "$.reports[?(@.title == 'Residences Report')].residences[0].street"
-    },
-    {
-        "source": "$.applications[0].borrower.mailingAddress.addressCity",
-        "target": "$.reports[?(@.title == 'Residences Report')].residences[0].city"
-    },
-    {
-        "source": "$.applications[0].borrower.mailingAddress.addressState",
-        "target": "$.reports[?(@.title == 'Residences Report')].residences[0].state"
-    },
-    {
-        "source": "$.applications[0].borrower.mailingAddress.addressPostalCode",
-        "target": "$.reports[?(@.title == 'Residences Report')].residences[0].zip"
-    },
-
-    {
-        "source": "$.applications[0].coborrower.mailingAddress.addressStreetLine1",
-        "target": "$.reports[?(@.title == 'Residences Report')].residences[1].street"
-    },
-    {
-        "source": "$.applications[0].coborrower.mailingAddress.addressCity",
-        "target": "$.reports[?(@.title == 'Residences Report')].residences[1].city"
-    },
-    {
-        "source": "$.applications[0].coborrower.mailingAddress.addressState",
-        "target": "$.reports[?(@.title == 'Residences Report')].residences[1].state"
-    },
-    {
-        "source": "$.applications[0].coborrower.mailingAddress.addressPostalCode",
-        "target": "$.reports[?(@.title == 'Residences Report')].residences[1].zip"
-    },
-    {
         "filter_unique": "$.reports[?(@.title == 'Residences Report')].residences"
+    },
+    {
+        "iterate": {
+            "source_list": "$.applications",
+            "target_list": "$.reports[?(@.title == 'Residences Report')].residences",
+            "mappings": [
+                {
+                    "source": ".borrower.mailingAddress.addressStreetLine1",
+                    "target": ".street"
+                },
+                {
+                    "source": ".borrower.mailingAddress.addressCity",
+                    "target": ".city"
+                },
+                {
+                    "source": ".borrower.mailingAddress.addressState",
+                    "target": ".state"
+                },
+                {
+                    "source": ".borrower.mailingAddress.addressPostalCode",
+                    "target": ".zip"
+                }
+            ]
+        }
+    },
+    {
+        "iterate": {
+            "source_list": "$.applications",
+            "target_list": "$.reports[?(@.title == 'Residences Report')].residences",
+            "mappings": [
+                {
+                    "source": ".coborrower.mailingAddress.addressStreetLine1",
+                    "target": ".street"
+                },
+                {
+                    "source": ".coborrower.mailingAddress.addressCity",
+                    "target": ".city"
+                },
+                {
+                    "source": ".coborrower.mailingAddress.addressState",
+                    "target": ".state"
+                },
+                {
+                    "source": ".coborrower.mailingAddress.addressPostalCode",
+                    "target": ".zip"
+                }
+            ]
+        }
     }
 ]

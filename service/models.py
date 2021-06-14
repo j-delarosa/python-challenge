@@ -77,9 +77,33 @@ class JSONManifest:
 
     def __iter__(self):
         """Iterate on the rules and items, yielding only those which match."""
+        lengths = {}
 
-        # Handle basic source-target mapping
+        def _find_source_in_path(source, path):
+            if source == path:
+                return True
+
+            source_wildcard_regex = r"\.(.*)\[\*\]"
+            found_wildcard = re.findall(source_wildcard_regex, source)
+            for wildcard in found_wildcard:
+                index_regex = fr"\.{wildcard}\[\d+]"
+                found_item = re.search(index_regex, path)
+                if found_item:
+                    return True
+
+            return False
+
+        def _build_target_path(target, items):
+            test = items
+
+            target_n_regex = r"\..*\[(n(?:\+\d+)*)\]"
+            found_ = re.findall(target_n_regex, target)
+
+            return target
+
+        iterator_dict = {}
         for rule in self._rules:
+            # Handle basic source-target mapping
             for path, value in self._fdata.items():
                 if 'source' in rule:
                     if rule.get('source') == path:
@@ -97,7 +121,24 @@ class JSONManifest:
             # For empty lists, skip this mapping rule
             if check_match_values:
                 yield rule.get('target'), \
-                      len([t for t in (set(tuple(i) for i in check_match_values))]) == len(check_match_values)/2
+                      len([t for t in (set(tuple(i) for i in check_match_values))]) == \
+                      len(check_match_values)/2
+
+            # Handle iterate rules to take care of lists of unknown sizes
+            if 'iterate' in rule:
+                for path, value in self._fdata.items():
+                    iterate_rule = rule.get('iterate')
+                    for mapping in iterate_rule.get('mappings'):
+                        if mapping.get('source') in path and \
+                                iterate_rule.get('source_list') in path:
+                            target_list = f"{iterate_rule.get('target_list')}"
+                            count_for_target = iterator_dict.get(target_list, 0)
+                            target_path = \
+                                f"{target_list}[{count_for_target}]{mapping.get('target')}"
+                            yield target_path, value
+
+                # Increase the count for the given target list
+                iterator_dict[target_list] = count_for_target + 1
 
     # Static methods
     @staticmethod

@@ -85,3 +85,4 @@ def test_residences_report_same_address_filtered():
     residences = res_report[0].get('residences')
     assert len(residences) == 1
     assert len(list(filter(lambda r: r.get('street') == '123 EXAMPLE PKWY.', residences))) == 1
+
