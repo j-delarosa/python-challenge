@@ -82,8 +82,8 @@ class JSONManifest:
     def __iter__(self):
         """Iterate on the rules and items, yielding only those which match."""
 
-        # Handle basic source-target mapping
         for rule in self._rules:
+            # Handle basic source-target mapping
             if 'source' in rule:
                 for path, value in self._fdata.items():
                     if rule.get('source') == path:
