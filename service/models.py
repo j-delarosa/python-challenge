@@ -10,8 +10,11 @@ from enum import Enum
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+
 class FilterType(Enum):
+    """Enum to define the different types of filters which can be applied to a record."""
     UNIQUE = 'UNIQUE'
+
 
 # Model objects
 class JSONManifest:
@@ -64,6 +67,7 @@ class JSONManifest:
 
     @property
     def filters(self) -> list:
+        """Return a dictionary of filter types and the paths at which to apply them"""
         return copy(self._filters)
 
     def __init__(self, data: dict = None, rules: list = None):
@@ -139,6 +143,7 @@ class JSONManifest:
 
                 # Increase the count for the given target list
                 iterator_dict[target_list] = count_for_target + 1
+
 
     # Static methods
     @staticmethod
@@ -355,7 +360,7 @@ class JSONFactory:
         """
         record = {} if record is None else record
 
-        def _insert_value(*args):
+        def _insert_value(*args): # pylint: disable=unused-argument
             return value
 
         path_keys = cls.parse_path(path)
@@ -365,30 +370,30 @@ class JSONFactory:
 
     @classmethod
     def iter_with_query(cls, func_to_execute, keys=None, reference=None):
-        """Iterate through a given reference based on a path of keys and executes a function at the specified path.
+        """Iterate through a given object based on a path of keys and executes a function at path.
 
-                This method is very similar to the _iter method in the insert_value method except:
-                    - It assumes the keys includes a query.
-                    - It takes in a function reference to execute, instead of just inserting a value.
-                    - The function's return value will write to the specified path.
+        This method is very similar to the _iter method in the insert_value method except:
+            - It assumes the keys includes a query.
+            - It takes in a function reference to execute, instead of just inserting a value.
+            - The function's return value will write to the specified path.
 
-                Note, this is an iterative function and is called recursively.
+        Note, this is an iterative function and is called recursively.
 
-                Parameters
-                ----------
-                func_to_execute : function ref
-                    The function to execute at the specified path. Return value will be written to path.
-                keys : list(dict)
-                    The list of json keys, indexes, and queries to navigate and build out the record.
-                reference : dict{str:any}
-                    The record (or sub-record) to insert the value into.
+        Parameters
+        ----------
+        func_to_execute : function ref
+            The function to execute at the specified path. Return value will be written to path.
+        keys : list(dict)
+            The list of json keys, indexes, and queries to navigate and build out the record.
+        reference : dict{str:any}
+            The record (or sub-record) to insert the value into.
 
-                Returns
-                -------
-                dict{str:any}
-                    Returns the updated record.
+        Returns
+        -------
+        dict{str:any}
+            Returns the updated record.
 
-                """
+        """
 
         keys = [] if keys is None else keys
         reference = {} if reference is None else reference
@@ -496,15 +501,14 @@ class JSONFactory:
 
         """
 
-        def _dedup_list(input):
-            input = [] if None else input
+        def _dedup_list(input_list: list):
+            input_list = [] if input_list is None else input_list
 
             # For list of dictionaries
-            if all(isinstance(d, dict) for d in input):
-                return [dict(t) for t in {tuple(d.items()) for d in input}]
+            if all(isinstance(d, dict) for d in input_list):
+                return [dict(t) for t in {tuple(d.items()) for d in input_list}]
             # For list of value types
-            else:
-                return list(OrderedDict.fromkeys(input))
+            return list(OrderedDict.fromkeys(input_list))
 
         path_keys = cls.parse_path(path)
         record = cls.iter_with_query(_dedup_list, path_keys, record)

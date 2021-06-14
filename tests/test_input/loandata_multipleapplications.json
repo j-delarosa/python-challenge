@@ -27,7 +27,7 @@
                 "firstName": "JANET",
                 "lastName": "DOE",
                 "mailingAddress": {
-                    "addressStreetLine1": "123 EXAMPLE PKWY.",
+                    "addressStreetLine1": "456 EXAMPLE PKWY.",
                     "addressCity": "FLOWER MOUND",
                     "addressState": "TX",
                     "addressPostalCode": "75028"
@@ -37,7 +37,7 @@
                 "firstName": "JOHNATHAN",
                 "lastName": "DOE",
                 "mailingAddress": {
-                    "addressStreetLine1": "123 EXAMPLE PKWY.",
+                    "addressStreetLine1": "567 EXAMPLE PKWY.",
                     "addressCity": "FLOWER MOUND",
                     "addressState": "TX",
                     "addressPostalCode": "75028"
