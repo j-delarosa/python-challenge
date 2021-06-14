@@ -91,12 +91,12 @@ class JSONManifest:
 
             # Handle check_match boolean mapping
             if 'check_match' in rule:
-                check_match_values= []
+                check_match_values = []
                 for path, value in self._fdata.items():
                     # Build out list of path/value pairs for the given check_match rule
-                        for candidate_path in rule.get('check_match'):
-                            if candidate_path in path:
-                                check_match_values.append((path.replace(candidate_path, ''), value))
+                    for candidate_path in rule.get('check_match'):
+                        if candidate_path in path:
+                            check_match_values.append((path.replace(candidate_path, ''), value))
 
                 # For empty lists, skip this mapping rule
                 if check_match_values:
