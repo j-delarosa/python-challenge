@@ -130,6 +130,8 @@ class JSONManifest:
 
             # Handle iterate rules to take care of lists of unknown sizes
             if 'iterate' in rule:
+                source_list_dict = {}
+                source_list = []
                 for path, value in self._fdata.items():
                     iterate_rule = rule.get('iterate')
                     for mapping in iterate_rule.get('mappings'):
@@ -137,6 +139,17 @@ class JSONManifest:
                                 iterate_rule.get('source_list') in path:
                             target_list = f"{iterate_rule.get('target_list')}"
                             count_for_target = iterator_dict.get(target_list, 0)
+
+                            modified_sl = str(iterate_rule.get('source_list')).replace('$.', r'\$\.')
+                            source_list_regex = fr"({modified_sl}\[(\d+)\])"
+                            match = re.findall(source_list_regex, path)
+
+                            if len(match) > 0:
+                                if match[0][0] not in source_list:
+                                    if len(source_list) != 0:
+                                        count_for_target += 1
+                                    source_list.append(match[0][0])
+
                             target_path = \
                                 f"{target_list}[{count_for_target}]{mapping.get('target')}"
                             yield target_path, value
