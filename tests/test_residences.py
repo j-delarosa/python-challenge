@@ -128,5 +128,7 @@ def test_residences_report_multiple_applications_appends(abs_path):
     assert res_report is not None
     assert len(res_report) == 1
     residences = res_report[0].get('residences')
-    assert len(residences) == 1
+    assert len(residences) == 3
     assert len(list(filter(lambda r: r.get('street') == '123 EXAMPLE PKWY.', residences))) == 1
+    assert len(list(filter(lambda r: r.get('street') == '456 EXAMPLE PKWY.', residences))) == 1
+    assert len(list(filter(lambda r: r.get('street') == '567 EXAMPLE PKWY.', residences))) == 1

@@ -105,7 +105,7 @@ class JSONManifest:
 
             return target
 
-        iterator_dict = {}
+        target_track = {}
         for rule in self._rules:
             # Handle basic source-target mapping
             for path, value in self._fdata.items():
@@ -128,34 +128,39 @@ class JSONManifest:
                       len([t for t in (set(tuple(i) for i in check_match_values))]) == \
                       len(check_match_values)/2
 
-            # Handle iterate rules to take care of lists of unknown sizes
+            # Handle "iterate" rules to take care of lists of unknown sizes
+            # Keeps Track of 2 Lists:
+            #    (a) target_track : dictionary with target lists and what index we are on
+            #    (b) source_track: : list to keep track of what index of the source list we are on
             if 'iterate' in rule:
-                source_list_dict = {}
-                source_list = []
+                source_track = []
+                iterate_rule = rule.get('iterate')
                 for path, value in self._fdata.items():
-                    iterate_rule = rule.get('iterate')
                     for mapping in iterate_rule.get('mappings'):
                         if mapping.get('source') in path and \
                                 iterate_rule.get('source_list') in path:
                             target_list = f"{iterate_rule.get('target_list')}"
-                            count_for_target = iterator_dict.get(target_list, 0)
+                            count_for_target = target_track.get(target_list, 0)
 
-                            modified_sl = str(iterate_rule.get('source_list')).replace('$.', r'\$\.')
-                            source_list_regex = fr"({modified_sl}\[(\d+)\])"
+                            # Using regex, check the source list if we have looked at this index yet
+                            modified_sl = str(iterate_rule.get('source_list')).\
+                                replace('$.', r'\$\.')
+                            source_list_regex = fr"({modified_sl}\[\d+\])"
                             match = re.findall(source_list_regex, path)
-
                             if len(match) > 0:
-                                if match[0][0] not in source_list:
-                                    if len(source_list) != 0:
+                                if match[0] not in source_track:
+                                    if len(source_track) != 0:
                                         count_for_target += 1
-                                    source_list.append(match[0][0])
+                                        target_track[target_list] = count_for_target
+                                    source_track.append(match[0])
 
+                            # Build the target path and return it with the value
                             target_path = \
                                 f"{target_list}[{count_for_target}]{mapping.get('target')}"
                             yield target_path, value
 
                 # Increase the count for the given target list
-                iterator_dict[target_list] = count_for_target + 1
+                target_track[target_list] = count_for_target + 1
 
 
     # Static methods

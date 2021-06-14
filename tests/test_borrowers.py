@@ -54,3 +54,24 @@ def test_borrowers_report_same_address_shared_address_true(abs_path):
     assert borrowers_report is not None
     assert len(borrowers_report) == 1
     assert borrowers_report[0].get('shared_address')
+
+
+def test_borrowers_report_multiple_applications_appends(abs_path):
+    # Arrange
+    with open(os.path.join(abs_path, 'test_input/loandata_multipleapplications.json')) as file:
+        event = generate_event(json.load(file))
+
+    # Act
+    response = main(event)
+
+    # Assert
+    assert response.get('reports') is not None
+    borrowers_report = list(
+        filter(lambda r: r.get('title') == 'Borrowers Report', response.get('reports')))
+    assert borrowers_report is not None
+    borrowers = borrowers_report[0].get('borrowers')
+    assert len(borrowers) == 4
+    assert len(list(filter(lambda r: r.get('first_name') == 'JOHN', borrowers))) == 1
+    assert len(list(filter(lambda r: r.get('first_name') == 'JANE', borrowers))) == 1
+    assert len(list(filter(lambda r: r.get('first_name') == 'JANET', borrowers))) == 1
+    assert len(list(filter(lambda r: r.get('first_name') == 'JOHNATHAN', borrowers))) == 1
