@@ -137,6 +137,23 @@ class JSONManifest:
 
     @staticmethod
     def find_filters(rules: dict):
+        """Extract the filters from the list of rules.
+
+            Filters are a custom mapping rule that allow you to groom the mapped
+            values before returning the report. Supported filters are defined in
+            the FilterType class.
+
+        Parameters
+        ----------
+        rules : dict{str:any}
+            The dictionary of all mapping rules.
+
+        Returns
+        -------
+        dict{FilterType:any}
+            Returns a data dictionary of filter types and the paths at which to apply them.
+
+        """
         rules = {} if rules is None else rules
         filters = {}
 
@@ -422,6 +439,21 @@ class JSONFactory:
 
     @classmethod
     def remove_duplicates(cls, path, record):
+        """Remove duplicates within a record at the given path
+
+        Parameters
+        ----------
+        path : str
+            The path to deduplicate.
+        record : dict{str:any}
+            The record to update.
+
+        Returns
+        -------
+        dict{str:any}
+            Returns the updated record.
+
+        """
 
         def _dedup_list(input):
             input = [] if None else input
@@ -439,7 +471,23 @@ class JSONFactory:
 
     @classmethod
     def filter_record(cls, filters, record):
+        """Applies the registered filters to the projected record.
+
+        Parameters
+        ----------
+        filters : dict{FilterType:any}
+            Dictionary defining the type of filter to apply and the path at which to apply
+        record : dict{str:any}
+            The object to apply filter to.
+
+        Returns
+        -------
+        dict{str:any}
+            Returns the updated record.
+
+        """
         filters = {} if filters is None else filters
+        record = {} if record is None else record
 
         for filter_type, paths in filters.items():
             if filter_type == FilterType.UNIQUE:
