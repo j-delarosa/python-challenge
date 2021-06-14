@@ -8,12 +8,17 @@
           "city": "FLOWER MOUND",
           "state": "TX",
           "zip": "75028"
+        },
+        {
+          "street": "123 EXAMPLE PKWY.",
+          "city": "FLOWER MOUND",
+          "state": "TX",
+          "zip": "75028"
         }
       ]
     },
     {
       "title": "Borrowers Report",
-      "shared_address": true,
       "borrowers": [
         {
           "first_name": "JANE",
