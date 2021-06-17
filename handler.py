@@ -72,19 +72,6 @@ def main(event, context=None):  # pylint: disable=unused-argument
 
     logger.info('Service recieved loans: %s', json.dumps(loans, indent=2))
 
-    # Ensure only unique 'maillingAddress' on each loan application
-    for loan in loans:
-        for app in loan['applications']:
-            try:
-                if app['borrower']['mailingAddress'] == \
-                    app['coborrower']['mailingAddress']:
-                    del app['coborrower']['mailingAddress']
-            except KeyError:
-                logger.error(
-                    'Unable to find key for loan application - Skipping loan'
-                )
-                continue
-
     logger.info('Unique mailing address for each loan applications: %s', 
         json.dumps(loans, indent=2))
 
