@@ -4,6 +4,7 @@ import logging
 from copy import copy
 from typing import Generator, List, Any
 
+from service import decorators
 
 # Logging setup
 logger = logging.getLogger(__name__)
@@ -351,6 +352,7 @@ class JSONFactory:
         self._manifest = manifest
 
     # Instance methods
+    @decorators.remove_duplicate_addresses
     def get_projection(self):
         """Generate the projection for the given manifest.
 
