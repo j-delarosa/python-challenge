@@ -60,6 +60,7 @@ class JSONManifest:
         """Return a dictionary of the mapped data, per the given rules."""
         return dict(iter(self))
 
+    @decorators.remove_duplicate_addresses
     def __init__(self, data: dict = None, rules: list = None):
         data = {} if data is None else data
         rules = [] if rules is None else rules
@@ -352,7 +353,6 @@ class JSONFactory:
         self._manifest = manifest
 
     # Instance methods
-    @decorators.remove_duplicate_addresses
     def get_projection(self):
         """Generate the projection for the given manifest.
 
