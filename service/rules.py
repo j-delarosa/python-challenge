@@ -26,6 +26,6 @@ def unique_residences_and_shared_address(record):
                     unique_records.append(residence)
             report['residences'] = unique_records
         if report['title'] == 'Borrowers Report':
-            report['shared_address'] = True if len(unique_records) > 0 else False
+            report['shared_address'] = True if len(unique_records) < 2 else False
 
     return record
