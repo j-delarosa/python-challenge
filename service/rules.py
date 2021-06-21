@@ -25,7 +25,7 @@ def unique_residences(record):
         if report['title'] == 'Residences Report':
             for residence in report['residences']:
                 residence_tokenized = hashlib.md5(json.dumps(residence).encode("utf-8")).hexdigest()
-                if tokenized not in residences_tokens:
+                if residence_tokenized not in residences_tokens:
                     residences_tokens.append(residence_tokenized)
                     unique_records.append(residence)
             report['residences'] = unique_records
