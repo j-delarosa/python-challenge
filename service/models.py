@@ -3,7 +3,7 @@ import re
 import logging
 from copy import copy
 from typing import Generator, List, Any
-import service.rules
+from service.rules import unique_residences_and_shared_address
 
 
 # Logging setup
@@ -374,7 +374,7 @@ class JSONFactory:
         for path, value in queries:
             self.insert_query(path, value, record)
 
-        # Apply rule to get unique residence records
-        record = service.rules.unique_residences(record)
+        # Apply rule to get unique residence records and detect if they shared address
+        record = unique_residences_and_shared_address(record)
 
         return record
