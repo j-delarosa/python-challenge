@@ -3,6 +3,7 @@ import re
 import logging
 from copy import copy
 from typing import Generator, List, Any
+from service.rules import unique_residences_and_shared_address
 
 
 # Logging setup
@@ -154,7 +155,7 @@ class JSONFactory:
         Parameters
         ----------
         path : str
-            The valid JSONPath to parse out keys, indicies, and queries from.
+            The valid JSONPath to parse out keys, indices, and queries from.
 
         Returns
         -------
@@ -172,7 +173,7 @@ class JSONFactory:
 
     @classmethod
     def insert_value(cls, path, value, record=None):
-        """Insert a value at a specfied path into the given record.
+        """Insert a value at a specified path into the given record.
 
         Parameters
         ----------
@@ -238,7 +239,7 @@ class JSONFactory:
 
     @classmethod
     def insert_query(cls, path, value, record=None):
-        """Insert a value at a specfied path into the given record.
+        """Insert a value at a specified path into the given record.
 
         This method is very similar to insert_value except it assumes the
         path includes a query. This method will then perform very similarly
@@ -372,5 +373,8 @@ class JSONFactory:
 
         for path, value in queries:
             self.insert_query(path, value, record)
+
+        # Apply rule to get unique residence records and detect if they shared address
+        record = unique_residences_and_shared_address(record)
 
         return record
