@@ -1,5 +1,6 @@
 """Service models and factories."""
 import re
+import json
 import logging
 from copy import copy
 from typing import Generator, List, Any
@@ -386,5 +387,13 @@ class JSONFactory:
 
         for path, value in queries:
             self.insert_query(path, value, record)
-
-        return record
+        
+        # filter unique residences
+        output = {'reports': []}
+        for rec in record['reports']:
+            if rec.get('residences') and isinstance(rec.get('residences'), list):
+                residences = set([json.dumps(res) for res in rec.get('residences')])
+                rec['residences'] = [json.loads(res) for res in residences]
+            output['reports'].append(rec)
+        
+        return output
