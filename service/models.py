@@ -1,5 +1,6 @@
 """Service models and factories."""
 import re
+import json
 import logging
 from copy import copy
 from typing import Generator, List, Any
@@ -70,9 +71,23 @@ class JSONManifest:
     def __iter__(self):
         """Iterate on the rules and items, yielding only those which match."""
         for rule in self._rules:
+            address = dict()
+            count_address = dict()
             for path, value in self._fdata.items():
                 if rule.get('source') == path:
                     yield rule.get('target'), value
+                elif 'borrower_address' in rule and 'coborrower_address' in rule:
+                    borrower_address = rule.get('borrower_address')
+                    coborrower_address = rule.get('coborrower_address')
+                    if coborrower_address in path or borrower_address in path:
+                        address_field = path.split('.')[-1]
+                        if address.get(address_field) and address.get(address_field) == value:
+                            count_address[address_field] = count_address[address_field] + 1
+                        else:
+                            count_address[address_field] = 1
+                            address[address_field] = value
+            if count_address:
+                yield rule.get('target'), all(val == 2 for val in count_address.values())
 
     # Static methods
     @staticmethod
@@ -372,5 +387,13 @@ class JSONFactory:
 
         for path, value in queries:
             self.insert_query(path, value, record)
-
-        return record
+        
+        # filter unique residences
+        output = {'reports': []}
+        for rec in record['reports']:
+            if rec.get('residences') and isinstance(rec.get('residences'), list):
+                residences = set([json.dumps(res) for res in rec.get('residences')])
+                rec['residences'] = [json.loads(res) for res in residences]
+            output['reports'].append(rec)
+        
+        return output
