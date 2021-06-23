@@ -1,0 +1,9 @@
+Resources:
+  Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 300
+      MemorySize: 128
+      Handler: handler.main
+      CodeUri: C:\Users\shawn\code\autoferrit\python-challenge
+      Runtime: python3.8

@@ -12,6 +12,10 @@ logger.setLevel(logging.DEBUG)
 
 
 def addAddressRules(app_idx: int, residence_idx: int, borrower: str = "borrower"):
+    """Add a rule to the list for adding a basic address.
+
+    Helps make the code more KISS
+    """
     if borrower in {"borrower", "coborrower"}:
         return [
             {
@@ -95,10 +99,11 @@ def main(event, context=None):  # pylint: disable=unused-argument
     for loan in loans:
         # update rules based on needs of ingested data
         for app in range(len(loan["applications"])):
+            # we need to do this for each application
             borrower = loan["applications"][app]["borrower"]
             coborrower = loan["applications"][app]["coborrower"]
 
-            # always add the main borrowers address
+            # always add the main borrowers address, which is in the json already
             if borrower["mailingAddress"] != coborrower["mailingAddress"]:
                 # but only add the coborrowers address, if it is different
                 rules += addAddressRules(app, 0, "coborrower")
