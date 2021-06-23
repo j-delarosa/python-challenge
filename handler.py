@@ -11,6 +11,30 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+def addAddressRules(app_idx: int, residence_idx: int, borrower: str = "borrower"):
+    if borrower in {"borrower", "coborrower"}:
+        return [
+            {
+                "source": f"$.applications[{app_idx}].{borrower}.mailingAddress.addressStreetLine1",
+                "target": f"$.reports[?(@.title == 'Residences Report')].residences[{residence_idx}].street",
+            },
+            {
+                "source": f"$.applications[{app_idx}].{borrower}.mailingAddress.addressCity",
+                "target": f"$.reports[?(@.title == 'Residences Report')].residences[{residence_idx}].city",
+            },
+            {
+                "source": f"$.applications[{app_idx}].{borrower}.mailingAddress.addressState",
+                "target": f"$.reports[?(@.title == 'Residences Report')].residences[{residence_idx}].state",
+            },
+            {
+                "source": f"$.applications[{app_idx}].{borrower}.mailingAddress.addressPostalCode",
+                "target": f"$.reports[?(@.title == 'Residences Report')].residences[{residence_idx}].zip",
+            },
+        ]
+    else:
+        raise ValueError("borrower should be one of: borrower, coborrower")
+
+
 # Lambda entry
 def main(event, context=None):  # pylint: disable=unused-argument
     """Handle loandata as Eventbridge event and return report.
@@ -43,49 +67,49 @@ def main(event, context=None):  # pylint: disable=unused-argument
 
     """
     event = {} if event is None else event
-    logger.info('Service invoked by event: %s', json.dumps(event, indent=2))
+    logger.info("Service invoked by event: %s", json.dumps(event, indent=2))
 
     # Load all rules
     project = Project()
     rules = [rule for _ in project.resources.values() for rule in _]
-    logger.info('Service loaded rules: %s', json.dumps(rules, indent=2))
+    logger.info("Service loaded rules: %s", json.dumps(rules, indent=2))
 
     # Confirm event is valid EventBridge -> SQS payload
     loans = []
-    for record in event.get('Records', [{}]):
-        if not all(
-            key in record for key in ['source', 'detail-type', 'detail']
-        ):
-            logger.error(
-                'Service received invalid EventBridge event- Skipping event'
-            )
+    for record in event.get("Records", [{}]):
+        if not all(key in record for key in ["source", "detail-type", "detail"]):
+            logger.error("Service received invalid EventBridge event- Skipping event")
             continue
 
         # Attempt to load loandata
         try:
-            loans.append(json.loads(record['detail']))
+            loans.append(json.loads(record["detail"]))
         except json.JSONDecodeError:
-            logger.error(
-                'Service received invalid event detail- Skipping event'
-            )
+            logger.error("Service received invalid event detail- Skipping event")
             continue
 
-    logger.info('Service recieved loans: %s', json.dumps(loans, indent=2))
+    logger.info("Service recieved loans: %s", json.dumps(loans, indent=2))
 
     # Generate Manifests
     reports = []
     for loan in loans:
+        # update rules based on needs of ingested data
+        for app in range(len(loan["applications"])):
+            borrower = loan["applications"][app]["borrower"]
+            coborrower = loan["applications"][app]["coborrower"]
+
+            # always add the main borrowers address
+            if borrower["mailingAddress"] != coborrower["mailingAddress"]:
+                # but only add the coborrowers address, if it is different
+                rules += addAddressRules(app, 0, "coborrower")
+
         manifest = JSONManifest(loan, rules)
-        logger.info(
-            'Generated manifest: %s', json.dumps(manifest.items, indent=2)
-        )
+        logger.info("Generated manifest: %s", json.dumps(manifest.items, indent=2))
 
         projection = JSONFactory(manifest).get_projection()
-        logger.info(
-            'Generated projection: %s', json.dumps(projection, indent=2)
-        )
+        logger.info("Generated projection: %s", json.dumps(projection, indent=2))
 
-        reports.extend(projection.get('reports', []))
+        reports.extend(projection.get("reports", []))
 
     # Reformat report output and return
-    return {'reports': reports}
+    return {"reports": reports}

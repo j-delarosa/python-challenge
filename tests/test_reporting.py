@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import logging
+from pprint import pprint as print
 
 # Initialize Logging
 for handler in logging.root.handlers[:]:
