@@ -11,10 +11,12 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def addAddressRules(app_idx: int, residence_idx: int, borrower: str = "borrower"):
+def add_address_rules(app_idx: int, residence_idx: int, borrower: str = "borrower"):
     """Add a rule to the list for adding a basic address.
 
-    Helps make the code more KISS
+    Helps make the code more KISS. Ideally, this could all be better my making the
+    JSON path rules more like templates to apply to each application. jinja or even
+    mustache templates could work great for this.
     """
     if borrower in {"borrower", "coborrower"}:
         return [
@@ -112,10 +114,10 @@ def main(event, context=None):  # pylint: disable=unused-argument
 
 
 def process_app_rules(loan, rules):
-    """Process loan data to handle any special rules."""
+    """Process loan data to handle any special rules based on ingested data."""
 
     for app in range(len(loan["applications"])):
-        # Here we can setup a call for each check/validation we want to run
+        # Here we can setup a call for each check/validation we want to run per app
         rules = check_borrower_addresses(loan, app, rules)
 
     return rules
@@ -142,6 +144,6 @@ def check_borrower_addresses(loan, app, rules):
         # this also needs more work to properly process the extra loan data I added
         # for testing, and append all the addresses properly and not overwrite by
         # generating the correct `residence_idx`. But currently works based on ticket.
-        rules += addAddressRules(app, app, "coborrower")
+        rules += add_address_rules(app, app, "coborrower")
 
     return rules
