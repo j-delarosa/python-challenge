@@ -97,16 +97,7 @@ def main(event, context=None):  # pylint: disable=unused-argument
     # Generate Manifests
     reports = []
     for loan in loans:
-        # update rules based on needs of ingested data
-        for app in range(len(loan["applications"])):
-            # we need to do this for each application
-            borrower = loan["applications"][app]["borrower"]
-            coborrower = loan["applications"][app]["coborrower"]
-
-            # always add the main borrowers address, which is in the json already
-            if borrower["mailingAddress"] != coborrower["mailingAddress"]:
-                # but only add the coborrowers address, if it is different
-                rules += addAddressRules(app, 0, "coborrower")
+        rules = process_app_rules(loan, rules)
 
         manifest = JSONManifest(loan, rules)
         logger.info("Generated manifest: %s", json.dumps(manifest.items, indent=2))
@@ -118,3 +109,39 @@ def main(event, context=None):  # pylint: disable=unused-argument
 
     # Reformat report output and return
     return {"reports": reports}
+
+
+def process_app_rules(loan, rules):
+    """Process loan data to handle any special rules."""
+
+    for app in range(len(loan["applications"])):
+        # Here we can setup a call for each check/validation we want to run
+        rules = check_borrower_addresses(loan, app, rules)
+
+    return rules
+
+
+def check_borrower_addresses(loan, app, rules):
+    """Validate borrower addresses."""
+    # ideally, this should be more idempotent and not magically
+    # update the `load` data and not return it. no side effects
+
+    borrower = loan["applications"][app]["borrower"]
+    coborrower = loan["applications"][app]["coborrower"]
+    # Do they borrowers have the same address?
+    if borrower["mailingAddress"] == coborrower["mailingAddress"]:
+        # they do, set the default False flag to True
+        loan["applications"][app]["shared_address"] = True
+    else:
+        # They do not, so let's add the coborrowers address
+        # param 2 (`residence_idx`) here is set to `1` because `0` already
+        # would be populated with the primary borrowers address
+        # we could possibly do this so if they are the same, it just
+        # overwrites address 0, but depending on ingested data size,
+        # that could produce issues? and lead to complexity.
+        # this also needs more work to properly process the extra loan data I added
+        # for testing, and append all the addresses properly and not overwrite by
+        # generating the correct `residence_idx`. But currently works based on ticket.
+        rules += addAddressRules(app, app, "coborrower")
+
+    return rules
