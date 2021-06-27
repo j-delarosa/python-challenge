@@ -20,7 +20,30 @@
                     "addressState": "TX",
                     "addressPostalCode": "75028"
                 }
-            }
+            },
+            "shared_address": false
+        },{
+            "borrower": {
+                "firstName": "Jimbob",
+                "lastName": "Smith",
+                "mailingAddress": {
+                    "addressStreetLine1": "1235 FAKE DR",
+                    "addressCity": "FLOWER MOUND",
+                    "addressState": "TX",
+                    "addressPostalCode": "75028"
+                }
+            },
+            "coborrower": {
+                "firstName": "Jolena",
+                "lastName": "Smith",
+                "mailingAddress": {
+                    "addressStreetLine1": "1234 FAKE DR",
+                    "addressCity": "FLOWER MOUND",
+                    "addressState": "TX",
+                    "addressPostalCode": "75028"
+                }
+            },
+            "shared_address": false
         }
     ],
     "property": {

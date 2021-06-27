@@ -82,7 +82,8 @@ class Project:
 
     def _parse_roots_ext(self, path, file):
         """Parse given file for name and qualified extension."""
-        paths = str(path).replace(str(self.root), '').split('/')
+        # Using Pathlib makes pathing much easier across OS's
+        paths = list(Path(path).parts)
         name, *exts = file.split('.')
         ext = '.'.join(exts) or ''
 

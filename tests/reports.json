@@ -1,23 +1,6 @@
 {
   "reports": [
     {
-      "title": "Residences Report",
-      "residences": [
-        {
-          "street": "123 EXAMPLE PKWY.",
-          "city": "FLOWER MOUND",
-          "state": "TX",
-          "zip": "75028"
-        },
-        {
-          "street": "123 EXAMPLE PKWY.",
-          "city": "FLOWER MOUND",
-          "state": "TX",
-          "zip": "75028"
-        }
-      ]
-    },
-    {
       "title": "Borrowers Report",
       "borrowers": [
         {
@@ -27,6 +10,38 @@
         {
           "first_name": "JOHN",
           "last_name": "DOE"
+        }
+      ],
+      "shared_address": true
+    },
+    {
+      "title": "Borrowers Report",
+      "borrowers": [
+        {
+          "first_name": "Jimbob",
+          "last_name": "Smith"
+        },
+        {
+          "first_name": "Jolena",
+          "last_name": "Smith"
+        }
+      ],
+      "shared_address": false
+    },
+    {
+      "title": "Residences Report",
+      "residences": [
+        {
+          "street": "123 EXAMPLE PKWY.",
+          "city": "FLOWER MOUND",
+          "state": "TX",
+          "zip": "75028"
+        },
+        {
+          "street": "1234 FAKE DR",
+          "city": "FLOWER MOUND",
+          "state": "TX",
+          "zip": "75028"
         }
       ]
     }
