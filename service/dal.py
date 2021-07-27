@@ -90,7 +90,9 @@ class Project:
 
         if len(paths) >= 2:
             paths = paths[1:]
-            paths.remove('resources')
+            # Add if checking here to avoid ValueError
+            if 'resources' in paths:
+                paths.remove('resources')
             return paths, ext
 
         return None, None
