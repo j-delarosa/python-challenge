@@ -53,6 +53,7 @@ def main(event, context=None):  # pylint: disable=unused-argument
     # Confirm event is valid EventBridge -> SQS payload
     loans = []
     for record in event.get('Records', [{}]):
+
         if not all(
             key in record for key in ['source', 'detail-type', 'detail']
         ):
@@ -74,7 +75,17 @@ def main(event, context=None):  # pylint: disable=unused-argument
 
     # Generate Manifests
     reports = []
+    shared_address_borrower = []
     for loan in loans:
+        applications = loan['applications']
+        for application in range(len(applications)):
+            borrower = applications[application]['borrower']
+            coborrower = applications[application]['coborrower']
+            shared_address_borrower.append({
+                'borrower_name': borrower['firstName'] + ' ' + borrower['lastName'],
+                'shared_address': borrower['mailingAddress'] == coborrower['mailingAddress']
+            })
+
         manifest = JSONManifest(loan, rules)
         logger.info(
             'Generated manifest: %s', json.dumps(manifest.items, indent=2)
@@ -87,5 +98,31 @@ def main(event, context=None):  # pylint: disable=unused-argument
 
         reports.extend(projection.get('reports', []))
 
+    # Use set to store value pairs based on the key and remove duplicate records in the iterable
+    def delete_duplicate(residences, key=None):
+        if key is None:
+            key = lambda x: x
+        flag = set()
+        for residence in residences:
+            k = key(residence)
+            if k in flag:
+                continue
+            yield residence
+            flag.add(k)
+
     # Reformat report output and return
+    for report in reports:
+        # Remove duplicate records for Residences Report -- Ticket [FTR] CC-01
+        if report['title'] == 'Residences Report':
+            report['residences'] = list(
+                delete_duplicate(report['residences'], key=lambda d: (d['city'], d['state'], d['street'], d['zip'])))
+
+        # insert shared_address to indicate if the borrower and
+        # coborrower for a given application live together -- Ticket [FTR] CC-02
+        elif report['title'] == 'Borrowers Report':
+            borrowers_name = [borrower['first_name'] + ' ' + borrower['last_name'] for borrower in report['borrowers']]
+            for borrower in shared_address_borrower:
+                if borrower['borrower_name'] in borrowers_name:
+                    report['shared_address'] = borrower['shared_address']
+
     return {'reports': reports}
