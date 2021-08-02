@@ -94,5 +94,6 @@ def condense_residences(loan):
     for app in loan['applications']:
         if app['borrower']['mailingAddress'] == app['coborrower']['mailingAddress']:
             app['coborrower'].pop('mailingAddress')
+            app['shared_address'] = True
 
     return loan
