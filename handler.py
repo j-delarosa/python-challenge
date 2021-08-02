@@ -61,9 +61,9 @@ def main(event, context=None):  # pylint: disable=unused-argument
             )
             continue
 
-        # Attempt to load loandata
+        # Attempt to load loan data
         try:
-            loans.append(json.loads(record['detail']))
+            loans.append(condense_residences(json.loads(record['detail'])))
         except json.JSONDecodeError:
             logger.error(
                 'Service received invalid event detail- Skipping event'
@@ -89,3 +89,11 @@ def main(event, context=None):  # pylint: disable=unused-argument
 
     # Reformat report output and return
     return {'reports': reports}
+
+def condense_residences(loan):
+    for app in loan['applications']:
+        if app['borrower']['mailingAddress'] == app['coborrower']['mailingAddress']:
+            app['coborrower'].pop('mailingAddress')
+            app['shared_address'] = True
+
+    return loan
